@@ -5,15 +5,17 @@ import smtplib
 from email.mime.text import MIMEText
 
 # Email config
-EMAIL_SENDER = "your_email@gmail.com"
-EMAIL_PASSWORD = "your_app_password_here"
-EMAIL_RECEIVER = "your_email@gmail.com"
+EMAIL_SENDER = "your_email@gmail.com"         # ← Your Gmail
+EMAIL_PASSWORD = "your_app_password_here"     # ← Your Gmail app password
+EMAIL_RECEIVER = "your_email@gmail.com"       # ← Where alerts are sent
 
-# Product URLs
+# URLs to monitor
 urls = {
     "Komplett": "https://www.komplett.no/search?q=Sapphire%20RX%209070%20XT",
     "Elkjøp": "https://www.elkjop.no/search?search=Sapphire%20RX%209070%20XT",
-    "Dustin": "https://www.dustin.no/search/sapphire%20rx%209070%20xt"
+    "Dustin": "https://www.dustin.no/search/sapphire%20rx%209070%20xt",
+    "Proshop": "https://www.proshop.no/?s=Sapphire+RX+9070+XT",
+    "ComputerSalg": "https://www.computersalg.no/search?s=Sapphire+RX+9070+XT"
 }
 
 headers = {
@@ -41,9 +43,36 @@ def check_stock():
             soup = BeautifulSoup(response.content, "html.parser")
             text = soup.get_text().lower()
 
-            if "ikke på lager" in text or "utsolgt" in text:
+            print(f"\n--- Checking {store} ---")
+
+            # OUT OF STOCK indicators (site-specific keywords)
+            out_keywords = [
+                "overvåk lagersaldo",
+                "ukjent leveringsdato",
+                "ikke på lager",
+                "ikke tilgjengelig",
+                "midlertidig utsolgt",
+                "ikke på lager online",
+                "forudbestil",  # Danish for preorder (ComputerSalg)
+                "bestillingsvare",
+                "udsolgt"
+            ]
+
+            # IN STOCK indicators (site-specific keywords)
+            in_keywords = [
+                "legg i handlekurv",
+                "på lager",
+                "på lager i nettbutikk",
+                "klar til levering",
+                "på fjernlager",
+                "add to basket",
+                "add to cart",
+                "på lager (1-2 hverdage)"
+            ]
+
+            if any(keyword in text for keyword in out_keywords):
                 print(f"[{store}] ❌ Not in stock.")
-            elif "på lager" in text or "legge i handlekurv" in text:
+            elif any(keyword in text for keyword in in_keywords):
                 print(f"[{store}] ✅ Possibly in stock! Check here: {url}")
                 send_email(
                     f"Stock Alert: {store}",
@@ -60,4 +89,4 @@ if __name__ == "__main__":
         print("🔍 Checking stock status...")
         check_stock()
         print("⏱️ Waiting 5 minutes before next check...\n")
-        time.sleep(300)  # Check every 5 mins
+        time.sleep(300)
