@@ -5,7 +5,9 @@ import smtplib
 from email.mime.text import MIMEText
 
 # Email config
-
+EMAIL_SENDER = "your_email@gmail.com"
+EMAIL_PASSWORD = "your_app_password_here"
+EMAIL_RECEIVER = "your_email@gmail.com"
 
 # Product URLs
 urls = {
@@ -33,4 +35,29 @@ def send_email(subject, body):
         print(f"⚠️ Failed to send email: {e}")
 
 def check_stock():
-    for store, url in
+    for store, url in urls.items():
+        try:
+            response = requests.get(url, headers=headers)
+            soup = BeautifulSoup(response.content, "html.parser")
+            text = soup.get_text().lower()
+
+            if "ikke på lager" in text or "utsolgt" in text:
+                print(f"[{store}] ❌ Not in stock.")
+            elif "på lager" in text or "legge i handlekurv" in text:
+                print(f"[{store}] ✅ Possibly in stock! Check here: {url}")
+                send_email(
+                    f"Stock Alert: {store}",
+                    f"The Sapphire RX 9070 XT might be in stock at {store}!\nCheck here: {url}"
+                )
+            else:
+                print(f"[{store}] 🤔 Status unclear. Check manually: {url}")
+
+        except Exception as e:
+            print(f"[{store}] ⚠️ Error checking {store}: {e}")
+
+if __name__ == "__main__":
+    while True:
+        print("🔍 Checking stock status...")
+        check_stock()
+        print("⏱️ Waiting 5 minutes before next check...\n")
+        time.sleep(300)  # Check every 5 mins
